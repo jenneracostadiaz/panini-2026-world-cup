@@ -31,4 +31,4 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 ENV PORT=3001
 EXPOSE 3001
 WORKDIR /repo/apps/api
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]

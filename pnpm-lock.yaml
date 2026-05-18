@@ -17,12 +17,21 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.19)
+      '@hono/zod-validator':
+        specifier: ^0.8.0
+        version: 0.8.0(hono@4.12.19)(zod@4.4.3)
       '@panini-tracker/db':
         specifier: workspace:*
         version: link:../../packages/db
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(gel@2.2.0)(postgres@3.4.9)
       hono:
         specifier: ^4.6.14
         version: 4.12.19
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@panini-tracker/typescript-config':
         specifier: workspace:*
@@ -666,6 +675,12 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hono/zod-validator@0.8.0':
+    resolution: {integrity: sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w==}
+    peerDependencies:
+      hono: '>=4.10.0'
+      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3029,6 +3044,11 @@ snapshots:
   '@hono/node-server@1.19.14(hono@4.12.19)':
     dependencies:
       hono: 4.12.19
+
+  '@hono/zod-validator@0.8.0(hono@4.12.19)(zod@4.4.3)':
+    dependencies:
+      hono: 4.12.19
+      zod: 4.4.3
 
   '@humanfs/core@0.19.2':
     dependencies:
