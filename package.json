@@ -1,0 +1,21 @@
+{
+  "name": "panini-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter @panini-tracker/db db:generate",
+    "db:migrate": "pnpm --filter @panini-tracker/db db:migrate",
+    "db:studio": "pnpm --filter @panini-tracker/db db:studio",
+    "db:seed": "pnpm --filter @panini-tracker/db db:seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

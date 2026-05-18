@@ -1,0 +1,24 @@
+{
+  "name": "@panini-tracker/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@panini-tracker/db": "workspace:*",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@panini-tracker/typescript-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
