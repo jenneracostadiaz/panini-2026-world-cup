@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 import authRoute from "./routes/auth.js";
@@ -12,6 +13,22 @@ import teamsRoute from "./routes/teams.js";
 const app = new Hono();
 
 app.use("*", logger());
+
+const allowedOrigins = (process.env.WEB_ORIGINS ?? "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  "*",
+  cors({
+    origin: (origin) =>
+      origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0] ?? "*",
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    maxAge: 600,
+  }),
+);
 
 app.get("/", (c) =>
   c.json({ status: "ok", service: "panini-api" }),
