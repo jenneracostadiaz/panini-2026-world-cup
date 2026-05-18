@@ -1,9 +1,10 @@
-export default function HomePage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <h1 className="text-4xl font-bold tracking-tight">
-        Panini Tracker — web
-      </h1>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const session = await auth();
+  redirect(session?.user ? "/dashboard" : "/login");
 }
