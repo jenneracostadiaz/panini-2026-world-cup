@@ -4,10 +4,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { collection, db } from "../lib/db.js";
+import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
+import { authMiddleware } from "../middleware/auth.js";
 
-// TODO: Sprint 3 — app.use(authMiddleware)
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 const updateSchema = z.object({
   status: z.enum(["owned", "missing"]),
@@ -16,6 +17,7 @@ const updateSchema = z.object({
 
 app.patch(
   "/stickers/:id",
+  authMiddleware,
   zValidator("json", updateSchema, (result, c) => {
     if (!result.success) return errorResponse(c, 400, "Invalid request body");
   }),

@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -5,6 +6,7 @@ import {
   collection,
   stickers,
   teams,
+  users,
   type NewCollectionEntry,
   type NewSticker,
   type NewTeam,
@@ -297,6 +299,22 @@ async function main() {
     await db.insert(teams).values(teamRows).onConflictDoNothing();
     await db.insert(stickers).values(stickerRows).onConflictDoNothing();
     await db.insert(collection).values(collectionRows).onConflictDoNothing();
+
+    const adminEmail = process.env.ADMIN_EMAIL ?? "admin@panini.local";
+    const adminPassword = process.env.ADMIN_PASSWORD ?? "changeme123";
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+
+    const insertedUsers = await db
+      .insert(users)
+      .values({ email: adminEmail, password: passwordHash })
+      .onConflictDoNothing({ target: users.email })
+      .returning({ id: users.id });
+
+    if (insertedUsers.length > 0) {
+      console.log(`Seeded admin user: ${adminEmail}`);
+    } else {
+      console.log(`Admin user already exists: ${adminEmail}`);
+    }
 
     console.log("Seed complete");
   } catch (err) {

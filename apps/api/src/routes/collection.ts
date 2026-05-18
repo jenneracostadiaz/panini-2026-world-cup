@@ -2,11 +2,12 @@ import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 
 import { collection, db } from "../lib/db.js";
+import type { AppEnv } from "../lib/env.js";
+import { authMiddleware } from "../middleware/auth.js";
 
-// TODO: Sprint 3 — app.use(authMiddleware)
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
-app.get("/collection/summary", async (c) => {
+app.get("/collection/summary", authMiddleware, async (c) => {
   const [row] = await db
     .select({
       total: sql<number>`COUNT(*)::int`,

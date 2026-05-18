@@ -59,6 +59,7 @@ export const publicTokens = pgTable("public_tokens", {
     .default(sql`gen_random_uuid()::text`),
   label: text("label"),
   contactInfo: text("contact_info"),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

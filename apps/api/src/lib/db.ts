@@ -5,14 +5,17 @@ export {
   stickers,
   teams,
   users,
-  type CollectionEntry,
-  type NewCollectionEntry,
-  type NewPublicToken,
-  type NewSticker,
-  type NewTeam,
-  type NewUser,
-  type PublicToken,
-  type Sticker,
-  type Team,
-  type User,
+} from "@panini-tracker/db";
+
+export type {
+  CollectionEntry,
+  NewCollectionEntry,
+  NewPublicToken,
+  NewSticker,
+  NewTeam,
+  NewUser,
+  PublicToken,
+  Sticker,
+  Team,
+  User,
 } from "@panini-tracker/db";

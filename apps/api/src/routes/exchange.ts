@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 
@@ -10,16 +10,18 @@ import {
   stickers,
   teams,
 } from "../lib/db.js";
+import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
+import { authMiddleware } from "../middleware/auth.js";
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 const tokenSchema = z.object({
   label: z.string().min(1),
   contactInfo: z.string().optional(),
 });
 
-// Public — no auth even in Sprint 3
+// Public — no auth, ever
 app.get("/exchange/:token", async (c) => {
   const tokenParam = c.req.param("token");
 
@@ -36,7 +38,6 @@ app.get("/exchange/:token", async (c) => {
       teamId: teams.id,
       teamName: teams.name,
       teamFlag: teams.flagCode,
-      teamSort: teams.sortOrder,
       stickerId: stickers.id,
       playerName: stickers.playerName,
       position: stickers.position,
@@ -95,43 +96,48 @@ app.get("/exchange/:token", async (c) => {
   });
 });
 
-// TODO: Sprint 3 — app.use(authMiddleware) for the POST below only
 app.post(
   "/exchange/token",
+  authMiddleware,
   zValidator("json", tokenSchema, (result, c) => {
     if (!result.success) return errorResponse(c, 400, "Invalid request body");
   }),
   async (c) => {
     const { label, contactInfo } = c.req.valid("json");
+    const userId = c.get("user").sub;
 
     const [existing] = await db
       .select()
       .from(publicTokens)
-      .orderBy(publicTokens.createdAt)
+      .where(eq(publicTokens.userId, userId))
       .limit(1);
 
     if (existing) {
       const [updated] = await db
         .update(publicTokens)
         .set({ label, contactInfo: contactInfo ?? null })
-        .where(eq(publicTokens.id, existing.id))
+        .where(and(eq(publicTokens.id, existing.id), eq(publicTokens.userId, userId)))
         .returning();
-      return c.json({
-        token: updated!.token,
-        label: updated!.label,
-        contactInfo: updated!.contactInfo,
-      });
+      if (updated) {
+        return c.json({
+          token: updated.token,
+          label: updated.label,
+          contactInfo: updated.contactInfo,
+        });
+      }
     }
 
     const [created] = await db
       .insert(publicTokens)
-      .values({ label, contactInfo: contactInfo ?? null })
+      .values({ label, contactInfo: contactInfo ?? null, userId })
       .returning();
 
+    if (!created) return errorResponse(c, 500, "Failed to create token");
+
     return c.json({
-      token: created!.token,
-      label: created!.label,
-      contactInfo: created!.contactInfo,
+      token: created.token,
+      label: created.label,
+      contactInfo: created.contactInfo,
     });
   },
 );

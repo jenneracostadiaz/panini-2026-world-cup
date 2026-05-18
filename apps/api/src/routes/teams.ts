@@ -4,10 +4,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { collection, db, stickers, teams } from "../lib/db.js";
+import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
+import { authMiddleware } from "../middleware/auth.js";
 
-// TODO: Sprint 3 — app.use(authMiddleware)
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 const bulkSchema = z.object({
   status: z.enum(["owned", "missing"]),
@@ -20,7 +21,7 @@ const validatorErrorHook = (
   if (!result.success) return errorResponse(c, 400, "Invalid request body");
 };
 
-app.get("/teams", async (c) => {
+app.get("/teams", authMiddleware, async (c) => {
   const rows = await db
     .select({
       id: teams.id,
@@ -70,7 +71,7 @@ app.get("/teams", async (c) => {
   return c.json(Array.from(grouped.values()));
 });
 
-app.get("/teams/:id", async (c) => {
+app.get("/teams/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
 
   const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
@@ -103,6 +104,7 @@ app.get("/teams/:id", async (c) => {
 
 app.patch(
   "/teams/:id/stickers/bulk",
+  authMiddleware,
   zValidator("json", bulkSchema, validatorErrorHook),
   async (c) => {
     const id = c.req.param("id");

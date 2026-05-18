@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 
+import authRoute from "./routes/auth.js";
 import collectionRoute from "./routes/collection.js";
 import exchangeRoute from "./routes/exchange.js";
 import importExportRoute from "./routes/import-export.js";
@@ -16,6 +17,7 @@ app.get("/", (c) =>
   c.json({ status: "ok", service: "panini-api" }),
 );
 
+app.route("/api", authRoute);
 app.route("/api", teamsRoute);
 app.route("/api", stickersRoute);
 app.route("/api", collectionRoute);

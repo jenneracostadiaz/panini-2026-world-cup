@@ -1,0 +1,2 @@
+ALTER TABLE "public_tokens" ADD COLUMN "user_id" uuid;--> statement-breakpoint
+ALTER TABLE "public_tokens" ADD CONSTRAINT "public_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;

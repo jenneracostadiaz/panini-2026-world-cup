@@ -4,10 +4,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { collection, db, stickers } from "../lib/db.js";
+import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
+import { authMiddleware } from "../middleware/auth.js";
 
-// TODO: Sprint 3 — app.use(authMiddleware)
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 const importSchema = z.object({
   collection: z.array(
@@ -19,7 +20,7 @@ const importSchema = z.object({
   ),
 });
 
-app.get("/collection/export", async (c) => {
+app.get("/collection/export", authMiddleware, async (c) => {
   const rows = await db
     .select({
       stickerId: collection.stickerId,
@@ -37,6 +38,7 @@ app.get("/collection/export", async (c) => {
 
 app.post(
   "/collection/import",
+  authMiddleware,
   zValidator("json", importSchema, (result, c) => {
     if (!result.success) return errorResponse(c, 400, "Invalid request body");
   }),
