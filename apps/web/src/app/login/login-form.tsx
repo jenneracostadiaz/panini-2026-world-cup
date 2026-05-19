@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -77,6 +78,16 @@ export function LoginForm() {
         >
           {submitting ? "Entrando…" : "Entrar"}
         </button>
+
+        <p className="pt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
+          ¿No tenés cuenta?{" "}
+          <Link
+            href="/register"
+            className="font-medium underline hover:no-underline"
+          >
+            Registrate
+          </Link>
+        </p>
       </form>
     </main>
   );

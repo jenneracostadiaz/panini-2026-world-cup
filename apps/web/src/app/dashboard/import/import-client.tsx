@@ -3,6 +3,7 @@
 import { Download, Loader2, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -61,8 +62,10 @@ export function ImportClient() {
       a.remove();
       URL.revokeObjectURL(url);
       setLastExportedAt(new Date().toISOString());
+      toast.success("Colección exportada");
     } catch (err) {
       console.error("[import] export failed", err);
+      toast.error("Error al exportar la colección");
     } finally {
       setExporting(false);
     }
@@ -104,11 +107,17 @@ export function ImportClient() {
         session,
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
-      setResult((await res.json()) as ImportResult);
+      const data = (await res.json()) as ImportResult;
+      setResult(data);
+      if (data.errors.length > 0) {
+        toast.warning(`${data.errors.length} errores en la importación`);
+      } else {
+        toast.success(`${data.imported} figuritas importadas`);
+      }
     } catch (err) {
-      setParseError(
-        err instanceof Error ? err.message : "Error al importar",
-      );
+      const message = err instanceof Error ? err.message : "Error al importar";
+      setParseError(message);
+      toast.error("Error al importar la colección");
     } finally {
       setImporting(false);
     }

@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 
@@ -22,6 +22,8 @@ const validatorErrorHook = (
 };
 
 app.get("/teams", authMiddleware, async (c) => {
+  const userId = c.get("user").sub;
+
   const rows = await db
     .select({
       id: teams.id,
@@ -38,7 +40,13 @@ app.get("/teams", authMiddleware, async (c) => {
     })
     .from(teams)
     .leftJoin(stickers, eq(stickers.teamId, teams.id))
-    .leftJoin(collection, eq(collection.stickerId, stickers.id))
+    .leftJoin(
+      collection,
+      and(
+        eq(collection.stickerId, stickers.id),
+        eq(collection.userId, userId),
+      ),
+    )
     .groupBy(teams.id)
     .orderBy(teams.sortOrder);
 
@@ -73,6 +81,7 @@ app.get("/teams", authMiddleware, async (c) => {
 
 app.get("/teams/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
+  const userId = c.get("user").sub;
 
   const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
   if (!team) return errorResponse(c, 404, "Team not found");
@@ -88,7 +97,13 @@ app.get("/teams/:id", authMiddleware, async (c) => {
       quantity: collection.quantity,
     })
     .from(stickers)
-    .leftJoin(collection, eq(collection.stickerId, stickers.id))
+    .leftJoin(
+      collection,
+      and(
+        eq(collection.stickerId, stickers.id),
+        eq(collection.userId, userId),
+      ),
+    )
     .where(eq(stickers.teamId, id))
     .orderBy(stickers.position);
 
@@ -108,6 +123,7 @@ app.patch(
   zValidator("json", bulkSchema, validatorErrorHook),
   async (c) => {
     const id = c.req.param("id");
+    const userId = c.get("user").sub;
     const { status } = c.req.valid("json");
 
     const [team] = await db
@@ -126,20 +142,30 @@ app.patch(
 
     const ids = stickerIds.map((s) => s.id);
 
-    const updated = await db
-      .update(collection)
-      .set({
-        status,
-        quantity:
-          status === "missing"
-            ? 0
-            : sql`GREATEST(${collection.quantity}, 1)`,
-        updatedAt: new Date(),
+    const rows = ids.map((stickerId) => ({
+      stickerId,
+      userId,
+      status,
+      quantity: status === "missing" ? 0 : 1,
+    }));
+
+    const upserted = await db
+      .insert(collection)
+      .values(rows)
+      .onConflictDoUpdate({
+        target: [collection.stickerId, collection.userId],
+        set: {
+          status,
+          quantity:
+            status === "missing"
+              ? sql`0`
+              : sql`GREATEST(${collection.quantity}, 1)`,
+          updatedAt: new Date(),
+        },
       })
-      .where(inArray(collection.stickerId, ids))
       .returning({ id: collection.id });
 
-    return c.json({ updated: updated.length });
+    return c.json({ updated: upserted.length });
   },
 );
 

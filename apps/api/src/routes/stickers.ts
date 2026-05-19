@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { collection, db } from "../lib/db.js";
+import { collection, db, stickers } from "../lib/db.js";
 import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -23,19 +23,29 @@ app.patch(
   }),
   async (c) => {
     const id = c.req.param("id");
+    const userId = c.get("user").sub;
     let { status, quantity } = c.req.valid("json");
 
     if (status === "missing") quantity = 0;
     if (status === "owned" && quantity === 0) quantity = 1;
 
-    const [updated] = await db
-      .update(collection)
-      .set({ status, quantity, updatedAt: new Date() })
-      .where(eq(collection.stickerId, id))
+    const [exists] = await db
+      .select({ id: stickers.id })
+      .from(stickers)
+      .where(eq(stickers.id, id))
+      .limit(1);
+    if (!exists) return errorResponse(c, 404, "Sticker not found");
+
+    const [upserted] = await db
+      .insert(collection)
+      .values({ stickerId: id, userId, status, quantity })
+      .onConflictDoUpdate({
+        target: [collection.stickerId, collection.userId],
+        set: { status, quantity, updatedAt: new Date() },
+      })
       .returning();
 
-    if (!updated) return errorResponse(c, 404, "Sticker not found");
-    return c.json(updated);
+    return c.json(upserted);
   },
 );
 

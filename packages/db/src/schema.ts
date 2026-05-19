@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -38,18 +39,29 @@ export const stickers = pgTable("stickers", {
   icon: text("icon"),
 });
 
-export const collection = pgTable("collection", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  stickerId: text("sticker_id")
-    .notNull()
-    .unique()
-    .references(() => stickers.id, { onDelete: "cascade" }),
-  status: text("status").notNull().default("missing"),
-  quantity: integer("quantity").notNull().default(0),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const collection = pgTable(
+  "collection",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    stickerId: text("sticker_id")
+      .notNull()
+      .references(() => stickers.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("missing"),
+    quantity: integer("quantity").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    collectionStickerUserUnique: unique("collection_sticker_user_unique").on(
+      t.stickerId,
+      t.userId,
+    ),
+  }),
+);
 
 export const publicTokens = pgTable("public_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),

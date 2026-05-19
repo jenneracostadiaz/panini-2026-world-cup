@@ -48,7 +48,9 @@ There is **no shared env loader** — each tool reads env its own way:
 
 When adding a new env var, update `.env.example` and remember web needs it copied into `apps/web/.env.local` (and prefixed `NEXT_PUBLIC_` if used client-side).
 
-Required vars: `DATABASE_URL`, `JWT_SECRET`, `NEXT_PUBLIC_API_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+Required vars: `DATABASE_URL`, `JWT_SECRET`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`. Optional: `ALLOWED_ORIGIN` (CORS), `PORT`, `NODE_ENV`.
+
+Both apps validate env at startup via Zod (`apps/api/src/lib/env.ts` and `apps/web/src/lib/env.ts`) — missing or malformed vars cause `process.exit(1)` at import time. Import `env` from those files rather than reading `process.env` directly.
 
 ## Auth architecture (two-token model)
 
@@ -58,7 +60,7 @@ Required vars: `DATABASE_URL`, `JWT_SECRET`, `NEXT_PUBLIC_API_URL`, `NEXTAUTH_SE
 4. All client/server calls to the API go through `apps/web/src/lib/api.ts#apiFetch`, which attaches `Authorization: Bearer <session.apiToken>` and redirects to `/login` on 401.
 5. The API's `authMiddleware` (`apps/api/src/middleware/auth.ts`) verifies the JWT and sets `c.var.user: AuthUser` (`{ sub, email, iat, exp }`).
 
-Next middleware (`apps/web/src/middleware.ts`) only gates `/dashboard/*` — everything else is open at the Next layer; the API enforces its own auth.
+Next proxy (`apps/web/src/proxy.ts`, formerly `middleware.ts`) only gates `/dashboard/*` — everything else is open at the Next layer; the API enforces its own auth. Client-side `apiFetch` (in `apps/web/src/lib/api.ts`) handles 401 by toasting "Sesión expirada" and calling `signOut({ redirectTo: '/login' })`.
 
 ## API routing convention (load-bearing)
 
@@ -67,6 +69,7 @@ In `apps/api/src/index.ts`, every sub-router is mounted at the same `/api` prefi
 - **Do not** use `app.use("*", authMiddleware)` inside a sub-router. With Hono, that middleware bleeds across sibling sub-apps mounted at the same prefix and will protect (or break) routes you did not intend to touch.
 - **Always** attach `authMiddleware` per-route: `app.get("/teams", authMiddleware, handler)`.
 - The public exchange endpoint `GET /api/exchange/:token` is intentionally unauthenticated. Keep it that way — the whole point is that someone can read your duplicates list without an account.
+- The `/api/auth/login` route has a per-route in-memory rate limit (`middleware/rate-limit.ts`, 10 req/min/IP). Rate-limit is attached inside the sub-app, not at the root, to avoid leaking across sibling routers.
 
 Validation uses `@hono/zod-validator` with a hook that returns `errorResponse(c, 400, "Invalid request body")`. Errors flow through `lib/errors.ts#errorResponse`.
 

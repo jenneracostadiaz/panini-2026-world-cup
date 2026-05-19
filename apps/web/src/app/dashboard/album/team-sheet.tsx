@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Flag } from "@/components/flag";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { apiFetch } from "@/lib/api";
 import type { StickerRow, TeamDetail } from "@/lib/types";
+import { usePressActions } from "@/lib/use-press-actions";
 import { cn } from "@/lib/utils";
 
 export function TeamSheet({
@@ -91,6 +93,7 @@ export function TeamSheet({
         onMutated();
       } catch (err) {
         console.error("[team-sheet] patch failed", err);
+        toast.error("Error al guardar, reintentando...");
         setTeam({ ...team, stickers: prev });
       } finally {
         setBusyId(null);
@@ -136,9 +139,11 @@ export function TeamSheet({
           session,
         );
         if (!res.ok) throw new Error(`status ${res.status}`);
+        toast.success("Equipo actualizado");
         onMutated();
       } catch (err) {
         console.error("[team-sheet] bulk failed", err);
+        toast.error("Error al actualizar el equipo");
         setTeam({ ...team, stickers: prev });
       }
     },
@@ -223,7 +228,7 @@ export function TeamSheet({
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Click: marcar / agregar repetida · Click derecho: quitar
+          Tap: marcar / agregar repetida · Mantené apretado (o click derecho): quitar
         </p>
       </SheetContent>
     </Sheet>
@@ -244,18 +249,20 @@ function StickerButton({
   const repeats = sticker.quantity > 1 ? sticker.quantity - 1 : 0;
   const owned = sticker.status === "owned";
   const isRepeated = owned && repeats > 0;
+  const press = usePressActions({
+    onPress: onLeftClick,
+    onLongPress: onRightClick,
+    disabled: busy,
+  });
 
   return (
     <button
       type="button"
-      onClick={onLeftClick}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        onRightClick();
-      }}
+      {...press}
       disabled={busy}
       className={cn(
-        "relative aspect-square w-full rounded-md border p-1 text-left transition-colors disabled:opacity-60",
+        "relative aspect-square w-full select-none touch-none overflow-hidden rounded-md border p-1 text-left transition-colors disabled:opacity-60",
+        "[-webkit-touch-callout:none]",
         !owned &&
           "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
         owned &&

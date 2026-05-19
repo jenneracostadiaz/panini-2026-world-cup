@@ -3,11 +3,9 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import {
-  collection,
   stickers,
   teams,
   users,
-  type NewCollectionEntry,
   type NewSticker,
   type NewTeam,
 } from "./schema.js";
@@ -24,12 +22,13 @@ type TeamSeed = {
 type SpecialSticker = {
   id: string;
   label: string;
-  icon: string;
+  icon: string | null;
   foil: boolean;
+  position: number;
 };
 
 type SpecialSection = {
-  id: "intro" | "museum";
+  id: "intro" | "museum" | "cocacola";
   stickers: SpecialSticker[];
 };
 
@@ -136,37 +135,84 @@ const TEAMS: TeamSeed[] = [
   { id: "newzealand", name: "New Zealand", code: "NZL", color: "#00247D", conf: "ofc", confName: "OFC" },
 ];
 
+const INTRO_STICKERS: SpecialSticker[] = [
+  { id: "00", label: "Logo Panini", position: 0, foil: true, icon: null },
+  { id: "FWC-1", label: "Cup pt1", position: 1, foil: true, icon: null },
+  { id: "FWC-2", label: "Cup pt2", position: 2, foil: false, icon: null },
+  { id: "FWC-3", label: "Official Mascots", position: 3, foil: false, icon: null },
+  { id: "FWC-4", label: "Official Brand", position: 4, foil: false, icon: null },
+  { id: "FWC-5", label: "Official Ball", position: 5, foil: false, icon: null },
+  { id: "FWC-6", label: "Host Country Emblem CAN", position: 6, foil: false, icon: null },
+  { id: "FWC-7", label: "Host Country Emblem MEX", position: 7, foil: false, icon: null },
+  { id: "FWC-8", label: "Host Country Emblem USA", position: 8, foil: false, icon: null },
+];
+
+const MUSEUM_EDITIONS: Array<{ year: number; label: string }> = [
+  { year: 1930, label: "Uruguay 1930" },
+  { year: 1934, label: "Italy 1934" },
+  { year: 1938, label: "Italy 1938" },
+  { year: 1950, label: "Uruguay 1950" },
+  { year: 1954, label: "Germany 1954" },
+  { year: 1958, label: "Brazil 1958" },
+  { year: 1962, label: "Brazil 1962" },
+  { year: 1966, label: "England 1966" },
+  { year: 1970, label: "Brazil 1970" },
+  { year: 1974, label: "Germany 1974" },
+  { year: 1978, label: "Argentina 1978" },
+  { year: 1982, label: "Italy 1982" },
+  { year: 1986, label: "Argentina 1986" },
+  { year: 1990, label: "Germany 1990" },
+  { year: 1994, label: "Brazil 1994" },
+  { year: 1998, label: "France 1998" },
+  { year: 2002, label: "Brazil 2002" },
+  { year: 2006, label: "Italy 2006" },
+  { year: 2010, label: "Spain 2010" },
+  { year: 2014, label: "Germany 2014" },
+  { year: 2018, label: "France 2018" },
+  { year: 2022, label: "Argentina 2022" },
+];
+
+const MUSEUM_STICKERS: SpecialSticker[] = MUSEUM_EDITIONS.map(
+  ({ year, label }, idx) => ({
+    id: `MUS-${year}`,
+    label,
+    icon: null,
+    foil: true,
+    position: idx + 1,
+  }),
+);
+
+const COCA_COLA_NAMES = [
+  "Lamine Yamal",
+  "Joshua Kimmich",
+  "Harry Kane",
+  "Santigo Giménez",
+  "Josko Gvuardiol",
+  "Federico Valverde",
+  "Jefferson Lerma",
+  "Enner Valencia",
+  "Gabriel Magalhães",
+  "Virgil van Dijk",
+  "Alphonso Davies",
+  "Emiliano Martínez",
+  "Raúl Jiménez",
+  "Lautaro Martinez",
+];
+
+const COCA_COLA_STICKERS: SpecialSticker[] = COCA_COLA_NAMES.map(
+  (label, idx) => ({
+    id: `CC-${idx + 1}`,
+    label,
+    icon: null,
+    foil: false,
+    position: idx + 1,
+  }),
+);
+
 const SPECIAL_SECTIONS: SpecialSection[] = [
-  {
-    id: "intro",
-    stickers: [
-      { id: "INT-1", label: "Album Cover", icon: "📖", foil: false },
-      { id: "INT-2", label: "Official Emblem", icon: "🏆", foil: true },
-      { id: "INT-3", label: "Mascot", icon: "🎭", foil: false },
-      { id: "INT-4", label: "Trophy", icon: "🥇", foil: true },
-      { id: "INT-5", label: "Host – Canada", icon: "🇨🇦", foil: false },
-      { id: "INT-6", label: "Host – Mexico", icon: "🇲🇽", foil: false },
-      { id: "INT-7", label: "Host – USA", icon: "🇺🇸", foil: false },
-      { id: "INT-8", label: "Format", icon: "📋", foil: false },
-      { id: "INT-9", label: "Welcome", icon: "⭐", foil: true },
-    ],
-  },
-  {
-    id: "museum",
-    stickers: [
-      { id: "MUS-1", label: "Uruguay 1930", icon: "🇺🇾", foil: false },
-      { id: "MUS-2", label: "Italy 1934", icon: "🇮🇹", foil: false },
-      { id: "MUS-3", label: "Italy 1938", icon: "🇮🇹", foil: false },
-      { id: "MUS-4", label: "Uruguay 1950", icon: "🇺🇾", foil: false },
-      { id: "MUS-5", label: "W. Germany 1954", icon: "🇩🇪", foil: false },
-      { id: "MUS-6", label: "Brazil 1958", icon: "🇧🇷", foil: false },
-      { id: "MUS-7", label: "Brazil 1962", icon: "🇧🇷", foil: false },
-      { id: "MUS-8", label: "England 1966", icon: "🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}", foil: false },
-      { id: "MUS-9", label: "Brazil 1970", icon: "🇧🇷", foil: false },
-      { id: "MUS-10", label: "W. Germany 1974", icon: "🇩🇪", foil: false },
-      { id: "MUS-11", label: "Argentina 1978", icon: "🇦🇷", foil: false },
-    ],
-  },
+  { id: "intro", stickers: INTRO_STICKERS },
+  { id: "museum", stickers: MUSEUM_STICKERS },
+  { id: "cocacola", stickers: COCA_COLA_STICKERS },
 ];
 
 const PLAYERS: Record<string, string[]> = {
@@ -239,12 +285,47 @@ function buildStickers(): NewSticker[] {
   for (const team of TEAMS) {
     const roster = PLAYERS[team.id];
     if (!roster) continue;
-    roster.forEach((playerName, idx) => {
+
+    rows.push({
+      id: `${team.code}-1`,
+      teamId: team.id,
+      playerName: "Escudo",
+      position: 1,
+      isFoil: false,
+      section: "team",
+      icon: null,
+    });
+
+    roster.slice(0, 11).forEach((playerName, idx) => {
+      const position = idx + 2;
       rows.push({
-        id: `${team.code}-${idx + 1}`,
+        id: `${team.code}-${position}`,
         teamId: team.id,
         playerName,
-        position: idx + 1,
+        position,
+        isFoil: false,
+        section: "team",
+        icon: null,
+      });
+    });
+
+    rows.push({
+      id: `${team.code}-13`,
+      teamId: team.id,
+      playerName: "Foto grupal",
+      position: 13,
+      isFoil: false,
+      section: "team",
+      icon: null,
+    });
+
+    roster.slice(11, 18).forEach((playerName, idx) => {
+      const position = idx + 14;
+      rows.push({
+        id: `${team.code}-${position}`,
+        teamId: team.id,
+        playerName,
+        position,
         isFoil: false,
         section: "team",
         icon: null,
@@ -253,28 +334,20 @@ function buildStickers(): NewSticker[] {
   }
 
   for (const section of SPECIAL_SECTIONS) {
-    section.stickers.forEach((s, idx) => {
+    for (const s of section.stickers) {
       rows.push({
         id: s.id,
         teamId: null,
         playerName: s.label,
-        position: idx + 1,
+        position: s.position,
         isFoil: s.foil,
         section: section.id,
         icon: s.icon,
       });
-    });
+    }
   }
 
   return rows;
-}
-
-function buildCollection(stickerRows: NewSticker[]): NewCollectionEntry[] {
-  return stickerRows.map((s) => ({
-    stickerId: s.id,
-    status: "missing",
-    quantity: 0,
-  }));
 }
 
 async function main() {
@@ -290,15 +363,20 @@ async function main() {
   try {
     const teamRows = buildTeams();
     const stickerRows = buildStickers();
-    const collectionRows = buildCollection(stickerRows);
 
     console.log(
-      `Seeding ${teamRows.length} teams, ${stickerRows.length} stickers, ${collectionRows.length} collection entries…`,
+      `Seeding ${teamRows.length} teams, ${stickerRows.length} stickers…`,
     );
+
+    // Sticker structure changed (positions, IDs, sections); wipe and rebuild.
+    // Cascades to collection — dev users lose their progress, per spec.
+    console.warn(
+      "[seed] DELETE FROM stickers (cascades to collection). Dev data only.",
+    );
+    await db.delete(stickers);
 
     await db.insert(teams).values(teamRows).onConflictDoNothing();
     await db.insert(stickers).values(stickerRows).onConflictDoNothing();
-    await db.insert(collection).values(collectionRows).onConflictDoNothing();
 
     const adminEmail = process.env.ADMIN_EMAIL ?? "admin@panini.local";
     const adminPassword = process.env.ADMIN_PASSWORD ?? "changeme123";

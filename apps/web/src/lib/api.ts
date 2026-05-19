@@ -1,7 +1,11 @@
+import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
+import { toast } from "sonner";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+let sessionExpiredHandled = false;
 
 export async function apiFetch(
   path: string,
@@ -20,7 +24,11 @@ export async function apiFetch(
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 && typeof window !== "undefined") {
-    window.location.href = "/login";
+    if (!sessionExpiredHandled) {
+      sessionExpiredHandled = true;
+      toast.error("Sesión expirada, volvé a iniciar sesión");
+      void signOut({ redirectTo: "/login" });
+    }
   }
 
   return res;

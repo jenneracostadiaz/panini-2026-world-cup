@@ -3,6 +3,7 @@
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -75,8 +76,11 @@ export function ExchangeClient() {
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
       setToken((await res.json()) as ExchangeToken);
+      toast.success("Configuración guardada");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      setError(message);
+      toast.error("Error al guardar la configuración");
     } finally {
       setSaving(false);
     }
@@ -86,6 +90,7 @@ export function ExchangeClient() {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
+    toast.success("Link copiado al portapapeles");
     setTimeout(() => setCopied(false), 1500);
   }
 

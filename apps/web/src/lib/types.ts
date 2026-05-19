@@ -47,6 +47,28 @@ export type ExchangeToken = {
   contactInfo: string | null;
 };
 
+export type SpecialSectionId = "intro" | "museum" | "cocacola";
+
+export type SpecialSectionSticker = {
+  id: string;
+  playerName: string;
+  position: number;
+  isFoil: boolean;
+  status: "owned" | "missing";
+  quantity: number;
+};
+
+export type SpecialSection = {
+  id: SpecialSectionId;
+  name: string;
+  description: string;
+  total: number;
+  owned: number;
+  repeated: number;
+  progressPct: number;
+  stickers: SpecialSectionSticker[];
+};
+
 export type ExchangeView = {
   label: string | null;
   contactInfo: string | null;

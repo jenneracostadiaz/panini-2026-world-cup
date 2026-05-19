@@ -31,3 +31,4 @@ export const db: Database = instance.db;
 export const sqlClient = instance.client;
 
 export * from "./schema.js";
+export * from "./lib/dates.js";

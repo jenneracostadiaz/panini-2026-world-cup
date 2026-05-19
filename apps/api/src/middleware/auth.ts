@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { verify } from "hono/jwt";
 
-import type { AppEnv, AuthUser } from "../lib/env.js";
+import { env, type AppEnv, type AuthUser } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
 
 export const authMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
@@ -11,14 +11,9 @@ export const authMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
 
   const token = header.slice(7).trim();
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("[auth] JWT_SECRET is not set");
-    return errorResponse(c, 500, "Internal server error");
-  }
 
   try {
-    const payload = (await verify(token, secret, "HS256")) as AuthUser;
+    const payload = (await verify(token, env.JWT_SECRET, "HS256")) as AuthUser;
     c.set("user", payload);
     await next();
   } catch {

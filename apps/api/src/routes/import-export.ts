@@ -1,9 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { collection, db, stickers } from "../lib/db.js";
+import { collection, db, stickers, toISOString } from "../lib/db.js";
 import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -21,6 +21,8 @@ const importSchema = z.object({
 });
 
 app.get("/collection/export", authMiddleware, async (c) => {
+  const userId = c.get("user").sub;
+
   const rows = await db
     .select({
       stickerId: collection.stickerId,
@@ -28,10 +30,11 @@ app.get("/collection/export", authMiddleware, async (c) => {
       quantity: collection.quantity,
     })
     .from(collection)
+    .where(eq(collection.userId, userId))
     .orderBy(collection.stickerId);
 
   return c.json({
-    exportedAt: new Date().toISOString(),
+    exportedAt: toISOString(new Date()),
     collection: rows,
   });
 });
@@ -44,6 +47,7 @@ app.post(
   }),
   async (c) => {
     const { collection: entries } = c.req.valid("json");
+    const userId = c.get("user").sub;
 
     const existing = await db
       .select({ id: stickers.id })
@@ -65,11 +69,12 @@ app.post(
           .insert(collection)
           .values({
             stickerId: e.stickerId,
+            userId,
             status: e.status,
             quantity: normalizedQty,
           })
           .onConflictDoUpdate({
-            target: collection.stickerId,
+            target: [collection.stickerId, collection.userId],
             set: {
               status: e.status,
               quantity: normalizedQty,

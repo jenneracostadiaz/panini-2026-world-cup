@@ -9,6 +9,7 @@ import {
   publicTokens,
   stickers,
   teams,
+  toISOString,
 } from "../lib/db.js";
 import type { AppEnv } from "../lib/env.js";
 import { errorResponse } from "../lib/errors.js";
@@ -32,6 +33,9 @@ app.get("/exchange/:token", async (c) => {
     .limit(1);
 
   if (!tokenRow) return errorResponse(c, 404, "Token not found");
+  if (!tokenRow.userId) return errorResponse(c, 404, "Token not found");
+
+  const ownerId = tokenRow.userId;
 
   const repeatedRows = await db
     .select({
@@ -46,12 +50,13 @@ app.get("/exchange/:token", async (c) => {
     .from(collection)
     .innerJoin(stickers, eq(stickers.id, collection.stickerId))
     .innerJoin(teams, eq(teams.id, stickers.teamId))
-    .where(gt(collection.quantity, 1))
+    .where(and(eq(collection.userId, ownerId), gt(collection.quantity, 1)))
     .orderBy(teams.sortOrder, stickers.position);
 
   const summaryRows = await db
     .select({ max: sql<Date | null>`MAX(${collection.updatedAt})` })
-    .from(collection);
+    .from(collection)
+    .where(eq(collection.userId, ownerId));
   const maxUpdated = summaryRows[0]?.max ?? null;
 
   const grouped = new Map<
@@ -91,7 +96,7 @@ app.get("/exchange/:token", async (c) => {
   return c.json({
     label: tokenRow.label,
     contactInfo: tokenRow.contactInfo,
-    updatedAt: new Date(maxUpdated ?? tokenRow.createdAt).toISOString(),
+    updatedAt: toISOString(maxUpdated ?? tokenRow.createdAt),
     repeated: Array.from(grouped.values()),
   });
 });

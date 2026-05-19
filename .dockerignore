@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/.env
+**/.env.*
+**/*.log
+.git
+.idea
+.vscode
+.claude
+**/.DS_Store
+README.md
+CLAUDE.md
