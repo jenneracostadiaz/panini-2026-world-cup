@@ -37,6 +37,7 @@ COPY --from=build --chown=node:node /repo/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=node:node /repo/apps/api/package.json ./apps/api/package.json
 COPY --from=build --chown=node:node /repo/packages/db/dist ./packages/db/dist
 COPY --from=build --chown=node:node /repo/packages/db/package.json ./packages/db/package.json
+COPY --from=build --chown=node:node /repo/packages/db/drizzle ./packages/db/drizzle
 
 USER node
 EXPOSE 3001
