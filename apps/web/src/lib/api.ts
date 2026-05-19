@@ -2,8 +2,13 @@ import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { toast } from "sonner";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
+  console.error(
+    "[api] NEXT_PUBLIC_API_URL no está definido — usando fallback http://localhost:3001. Revisá los build args.",
+  );
+}
 
 let sessionExpiredHandled = false;
 
